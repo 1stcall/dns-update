@@ -39,12 +39,11 @@ printf "Hostname to update is \'%s\'\n" $HOST
 printf "Current adresses are IP4 %s and IP6 %s\n" $IP4_ADD_CURRENT $IP6_ADD_CURRENT
 printf "DNS reports adresses are IP4 %s and IP6 %s\n" $IP4_ADD_DNS $IP6_ADD_DNS
 
-[ $DRYRUN == true ] && exit 0
-[ ${TOKEN:-unset} = unset ] && echo "Token unset!";exit 1
+[ $DRYRUN == true ] && echo "Exiting due to dryrun." && exit 0
+[ ${TOKEN:-unset} = unset ] && echo "Token unset!" && exit 1
 
 if [ $IP4_ADD_CURRENT != $IP4_ADD_DNS ]; then
-#    TOKEN=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/user/login?user=carl\&pass=Manager09\&includeInfo=false 2>/dev/null | jq -r '.token')
-    responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=false 2>/dev/null)
+    responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=true 2>/dev/null || true)
     status=$(echo $responce | jq -r '.status')
 
     if [ $status == "ok" ]; then
@@ -59,8 +58,7 @@ else
 fi
 
 if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
-#    TOKEN=${TOKEN:-$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/user/login?user=carl\&pass=Manager09\&includeInfo=false 2>/dev/null | jq -r '.token')}
-    responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true 2>/dev/null)
+    responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true 2>/dev/null || true)
     status=$(echo $responce | jq -r '.status')
 
     if [ $status == "ok" ]; then
@@ -73,17 +71,5 @@ if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
 else
     printf "%s Not updated.\n" $IP6_ADD_CURRENT 
 fi
-
-#if [ ${TOKEN:-unset} != unset ]; then
-#    responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/user/logout?token=$TOKEN 2>/dev/null)
-#    status=$(echo $responce | jq -r '.status')
-#    if [ $status == ok ]; then
-#        printf "Logout successfull\n"
-#    else
-#        printf "Logout failed!\n"
-#        echo $responce | jq
-#        exit 1
-#    fi
-#fi
 
 exit 0
