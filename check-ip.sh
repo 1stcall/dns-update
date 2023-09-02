@@ -19,8 +19,8 @@ declare HOST
 IP_LOOKUP_ADD=${IP_LOOKUP_ADD:-icanhazip.com}
 DNS_PROTOCOL=${DNS_PROTOCOL:-http}
 DNS_SERVER=${DNS_SERVER:-localhost:5380}
-DOMAIN=${DOMAIN:-1stcall.uk}
-HOST=${HOST:-rpicm4-1}
+DOMAIN=${DOMAIN:-example.com}
+HOST=${HOST:-myhost}
 
 IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
 IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
