@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -e
+set -euf
+set -o pipefail
 
 declare IP4_ADD_CURRENT
 declare IP6_ADD_CURRENT
