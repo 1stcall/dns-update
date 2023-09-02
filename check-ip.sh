@@ -3,6 +3,8 @@
 set -euf
 set -o pipefail
 
+declare DRYRUN
+
 declare IP4_ADD_CURRENT
 declare IP6_ADD_CURRENT
 declare IP4_ADD_DNS
@@ -16,6 +18,7 @@ declare HOST
 
 [ -f .env ] && source .env
 
+DRYRUN=${DRYRUN:-false}
 IP_LOOKUP_ADD=${IP_LOOKUP_ADD:-icanhazip.com}
 DNS_PROTOCOL=${DNS_PROTOCOL:-http}
 DNS_SERVER=${DNS_SERVER:-localhost:5380}
@@ -34,6 +37,8 @@ printf "Domain to check is \'%s\'\n" $DOMAIN
 printf "Hostname to update is \'%s\'\n" $HOST
 printf "Current adresses are IP4 %s and IP6 %s\n" $IP4_ADD_CURRENT $IP6_ADD_CURRENT
 printf "DNS reports adresses are IP4 %s and IP6 %s\n" $IP4_ADD_DNS $IP6_ADD_DNS
+
+[ $DRYRUN == true ] && exit 0
 
 if [ $IP4_ADD_CURRENT != $IP4_ADD_DNS ]; then
     TOKEN=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/user/login?user=carl\&pass=Manager09\&includeInfo=false 2>/dev/null | jq -r '.token')
