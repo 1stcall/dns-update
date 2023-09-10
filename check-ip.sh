@@ -28,10 +28,11 @@ HOST=${HOST:-$(hostname -s)}
 
 IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
 IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
-set -x
-IP4_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A)
-IP6_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} AAAA)
-set +x
+IP4_ADD_DNS=${$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A):-unset}
+IP6_ADD_DNS=${$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} AAAA):-unset}
+printf "DNS IPV6=$IP6_ADD_DNS"
+exit 1
+
 printf "IP lookup address is \'%s\'\n" $IP_LOOKUP_ADD
 printf "DNS API protocol is \'%s\'\n" $DNS_PROTOCOL
 printf "DNS API server is \'%s\'\n" $DNS_SERVER
