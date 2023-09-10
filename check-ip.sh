@@ -28,12 +28,10 @@ HOST=${HOST:-$(hostname -s)}
 
 IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
 IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
-IP4_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A)
-IP6_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} AAAA)
+IP4_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A 2>/dev/null || true)
+IP6_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} AAAA 2>/dev/null || true)
 IP4_ADD_DNS=${IP4_ADD_DNS:-unset}
 IP6_ADD_DNS=${IP6_ADD_DNS:-unset}
-printf "DNS IPV6=$IP6_ADD_DNS"
-exit 1
 
 printf "IP lookup address is \'%s\'\n" $IP_LOOKUP_ADD
 printf "DNS API protocol is \'%s\'\n" $DNS_PROTOCOL
@@ -47,30 +45,56 @@ printf "DNS reports adresses are IP4 %s and IP6 %s\n" $IP4_ADD_DNS $IP6_ADD_DNS
 [ ${TOKEN:-unset} = unset ] && echo "Token unset!" && exit 1
 
 if [ $IP4_ADD_CURRENT != $IP4_ADD_DNS ]; then
-    responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=true 2>/dev/null || true)
-    status=$(echo $responce | jq -r '.status')
+    if [ $IP4_ADD_DNS != unset ]; then
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=true 2>/dev/null || true)
+        status=$(echo $responce | jq -r '.status')
 
-    if [ $status == "ok" ]; then
-        printf "%s -> %s Updated.\n" $IP4_ADD_DNS $IP4_ADD_CURRENT
+        if [ $status == "ok" ]; then
+            printf "%s -> %s Updated.\n" $IP4_ADD_DNS $IP4_ADD_CURRENT
+        else
+            printf "%s\n\n" "DNS update failed.  Responce follows"
+            echo $responce | jq
+            exit 1
+        fi
     else
-        printf "%s\n\n" "DNS update failed.  Responce follows"
-        echo $responce | jq
-        exit 1
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&ipAddress=${IP4_ADD_CURRENT} 2>/dev/null || true)
+        status=$(echo $responce | jq -r '.status')
+
+        if [ ${status:-failed} == "ok" ]; then
+            printf "%s -> %s Added.\n" $IP4_ADD_DNS $IP4_ADD_CURRENT
+        else
+            printf "%s\n\n" "DNS add failed.  Responce follows"
+            echo $responce | jq
+            exit 1
+        fi
     fi
 else
     printf "%s Not updated.\n" $IP4_ADD_CURRENT 
 fi
 
 if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
-    responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true 2>/dev/null || true)
-    status=$(echo $responce | jq -r '.status')
+    if [ $IP6_ADD_DNS != unset ]; then
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true 2>/dev/null || true)
+        status=$(echo $responce | jq -r '.status')
 
-    if [ $status == "ok" ]; then
-        printf "%s -> %s Updated.\n" $IP6_ADD_DNS $IP6_ADD_CURRENT
+        if [ ${status:-failed} == "ok" ]; then
+            printf "%s -> %s Updated.\n" $IP6_ADD_DNS $IP6_ADD_CURRENT
+        else
+            printf "%s\n\n" "DNS update failed.  Responce follows"
+            echo $responce | jq
+            exit 1
+        fi
     else
-        printf "%s\n\n" "DNS update failed.  Responce follows"
-        echo $responce | jq
-        exit 1
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&ipAddress=${IP6_ADD_CURRENT} 2>/dev/null || true)
+        status=$(echo $responce | jq -r '.status')
+
+        if [ ${status:-failed} == "ok" ]; then
+            printf "%s -> %s Added.\n" $IP6_ADD_DNS $IP6_ADD_CURRENT
+        else
+            printf "%s\n\n" "DNS add failed.  Responce follows"
+            echo $responce | jq
+            exit 1
+        fi
     fi
 else
     printf "%s Not updated.\n" $IP6_ADD_CURRENT 
