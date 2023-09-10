@@ -28,8 +28,10 @@ HOST=${HOST:-$(hostname -s)}
 
 IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
 IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
-IP4_ADD_DNS=${$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A):-unset}
-IP6_ADD_DNS=${$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} AAAA):-unset}
+IP4_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A)
+IP6_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} AAAA)
+IP4_ADD_DNS=${IP4_ADD_DNS:-unset}
+IP6_ADD_DNS=${IP6_ADD_DNS:-unset}
 printf "DNS IPV6=$IP6_ADD_DNS"
 exit 1
 
