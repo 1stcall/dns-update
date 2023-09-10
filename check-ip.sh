@@ -25,7 +25,7 @@ DNS_PROTOCOL=${DNS_PROTOCOL:-http}
 DNS_SERVER=${DNS_SERVER:-localhost:5380}
 DOMAIN=${DOMAIN:-$(hostname -d)}
 HOST=${HOST:-$(hostname -s)}
-
+set -x 
 IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
 IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
 IP4_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A)
