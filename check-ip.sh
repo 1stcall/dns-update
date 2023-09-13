@@ -16,6 +16,7 @@ declare DNS_SERVER
 declare DOMAIN
 declare HOST
 declare TOKEN
+declare USE_TAILSCALE
 
 [ -f .env ] && source .env
 
@@ -25,12 +26,19 @@ DNS_PROTOCOL=${DNS_PROTOCOL:-http}
 DNS_SERVER=${DNS_SERVER:-localhost:5380}
 DOMAIN=${DOMAIN:-$(hostname -d)}
 HOST=${HOST:-$(hostname -s)}
+USE_TAILSCALE=${USE_TAILSCALE:-false}
 
-IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
-IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
+if [ $USE_TAILSCALE == false ]; then
+    IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
+    IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
+else
+    IP4_ADD_CURRENT=$(tailscale ip -4)
+    IP6_ADD_CURRENT=$(tailscale ip -6)
+fi
+    
 IP4_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A 2>/dev/null || true)
 IP6_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} AAAA 2>/dev/null || true)
-IP4_ADD_DNS=${IP4_ADD_DNS:-unset}
+IP4_ADD_DNS=${IP4_ADD_DNS:-unset}   
 IP6_ADD_DNS=${IP6_ADD_DNS:-unset}
 
 printf "IP lookup address is \'%s\'\n" $IP_LOOKUP_ADD
@@ -46,24 +54,23 @@ printf "DNS reports adresses are IP4 %s and IP6 %s\n" $IP4_ADD_DNS $IP6_ADD_DNS
 
 if [ $IP4_ADD_CURRENT != $IP4_ADD_DNS ]; then
     if [ $IP4_ADD_DNS != unset ]; then
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=true 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
-
-        if [ $status == "ok" ]; then
+        if [ ${status:-error} == "ok" ]; then
             printf "%s -> %s Updated.\n" $IP4_ADD_DNS $IP4_ADD_CURRENT
         else
-            printf "%s\n\n" "DNS update failed.  Responce follows"
+            printf "%s\n\n" "DNS update A failed.  Responce follows"
             echo $responce | jq
             exit 1
         fi
     else
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&ipAddress=${IP4_ADD_CURRENT} 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&ipAddress=${IP4_ADD_CURRENT}\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
 
         if [ ${status:-failed} == "ok" ]; then
             printf "%s -> %s Added.\n" $IP4_ADD_DNS $IP4_ADD_CURRENT
         else
-            printf "%s\n\n" "DNS add failed.  Responce follows"
+            printf "%s\n\n" "DNS add A failed.  Responce follows"
             echo $responce | jq
             exit 1
         fi
@@ -74,24 +81,24 @@ fi
 
 if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
     if [ $IP6_ADD_DNS != unset ]; then
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
 
         if [ ${status:-failed} == "ok" ]; then
             printf "%s -> %s Updated.\n" $IP6_ADD_DNS $IP6_ADD_CURRENT
         else
-            printf "%s\n\n" "DNS update failed.  Responce follows"
+            printf "%s\n\n" "DNS update AAAA failed.  Responce follows"
             echo $responce | jq
             exit 1
         fi
     else
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&ipAddress=${IP6_ADD_CURRENT} 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&ipAddress=${IP6_ADD_CURRENT}\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
 
         if [ ${status:-failed} == "ok" ]; then
             printf "%s -> %s Added.\n" $IP6_ADD_DNS $IP6_ADD_CURRENT
         else
-            printf "%s\n\n" "DNS add failed.  Responce follows"
+            printf "%s\n\n" "DNS add AAAA failed.  Responce follows"
             echo $responce | jq
             exit 1
         fi
