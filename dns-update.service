@@ -1,0 +1,7 @@
+[Unit]
+Description=Check and update if necessary, the dns records for this computer.
+
+[Service]
+Type=oneshot
+EnvironmentFile=/home/carl/dns-update/.env
+ExecStart=/home/carl/dns-update/check-ip.sh

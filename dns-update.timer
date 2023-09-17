@@ -1,0 +1,10 @@
+[Unit]
+Description=Check and update if necessary, the dns records for this computer.
+
+[Timer]
+OnBootSec=30min
+OnUnitActiveSec=30min
+RemainAfterElapse=no
+
+[Install]
+WantedBy=timers.target
