@@ -28,12 +28,12 @@ DOMAIN=${DOMAIN:-$(hostname -d)}
 HOST=${HOST:-$(hostname -s)}
 USE_TAILSCALE=${USE_TAILSCALE:-false}
 
-if [ $USE_TAILSCALE == false ]; then
-    IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
-    IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
-else
+if [ $USE_TAILSCALE == true ]; then
     IP4_ADD_CURRENT=$(tailscale ip -4)
     IP6_ADD_CURRENT=$(tailscale ip -6)
+else
+    IP4_ADD_CURRENT=$(curl -4 ${IP_LOOKUP_ADD} 2>/dev/null)
+    IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
 fi
     
 IP4_ADD_DNS=$(dig @${DNS_SERVER} +short ${HOST}.${DOMAIN} A 2>/dev/null || true)
