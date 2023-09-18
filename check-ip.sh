@@ -13,6 +13,7 @@ declare IP6_ADD_DNS
 declare IP_LOOKUP_ADD
 declare DNS_PROTOCOL
 declare DNS_SERVER
+declare DNS_PORT
 declare DOMAIN
 declare HOST
 declare TOKEN
@@ -23,7 +24,8 @@ declare USE_TAILSCALE
 DRYRUN=${DRYRUN:-false}
 IP_LOOKUP_ADD=${IP_LOOKUP_ADD:-icanhazip.com}
 DNS_PROTOCOL=${DNS_PROTOCOL:-http}
-DNS_SERVER=${DNS_SERVER:-localhost:5380}
+DNS_SERVER=${DNS_SERVER:-localhost}
+DNS_PORT=${DNS_PORT:-5380}
 DOMAIN=${DOMAIN:-$(hostname -d)}
 HOST=${HOST:-$(hostname -s)}
 USE_TAILSCALE=${USE_TAILSCALE:-false}
@@ -54,7 +56,7 @@ printf "DNS reports adresses are IP4 %s and IP6 %s\n" $IP4_ADD_DNS $IP6_ADD_DNS
 
 if [ $IP4_ADD_CURRENT != $IP4_ADD_DNS ]; then
     if [ $IP4_ADD_DNS != unset ]; then
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=true\&createPtrZone=true 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}:${DNS_PORT}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&value=$IP4_ADD_DNS\&newValue=$IP4_ADD_CURRENT\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
         if [ ${status:-error} == "ok" ]; then
             printf "%s -> %s Updated.\n" $IP4_ADD_DNS $IP4_ADD_CURRENT
@@ -64,7 +66,7 @@ if [ $IP4_ADD_CURRENT != $IP4_ADD_DNS ]; then
             exit 1
         fi
     else
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&ipAddress=${IP4_ADD_CURRENT}\&ptr=true\&createPtrZone=true 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}:${DNS_PORT}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A\&ipAddress=${IP4_ADD_CURRENT}\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
 
         if [ ${status:-failed} == "ok" ]; then
@@ -81,7 +83,7 @@ fi
 
 if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
     if [ $IP6_ADD_DNS != unset ]; then
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true\&createPtrZone=true 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}:${DNS_PORT}/api/zones/records/update?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&value=$IP6_ADD_DNS\&newValue=$IP6_ADD_CURRENT\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
 
         if [ ${status:-failed} == "ok" ]; then
@@ -92,7 +94,7 @@ if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
             exit 1
         fi
     else
-        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&ipAddress=${IP6_ADD_CURRENT}\&ptr=true\&createPtrZone=true 2>/dev/null || true)
+        responce=$(curl ${DNS_PROTOCOL}://${DNS_SERVER}:${DNS_PORT}/api/zones/records/add?token=${TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=AAAA\&ipAddress=${IP6_ADD_CURRENT}\&ptr=true\&createPtrZone=true 2>/dev/null || true)
         status=$(echo $responce | jq -r '.status')
 
         if [ ${status:-failed} == "ok" ]; then
