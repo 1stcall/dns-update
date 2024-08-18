@@ -48,17 +48,17 @@ IP6_ADD_DNS=$(dig @${DNS_LOOKUP_SERVER} +short ${HOST}.${DOMAIN} AAAA 2>/dev/nul
 IP4_ADD_DNS=${IP4_ADD_DNS:-unset}   
 IP6_ADD_DNS=${IP6_ADD_DNS:-unset}
 
-printf "DNS Lookup Server is \'%s\'\n" $DNS_LOOKUP_SERVER
-printf "DNS API Token is \'%s\'\n" $DNS_API_TOKEN
-printf "DNS API protocol is \'%s\'\n" $DNS_API_PROTOCOL
-printf "DNS API server is \'%s\'\n" $DNS_API_SERVER
-printf "DNS API Port is \'%s\'\n" $DNS_API_PORT
-printf "Use Tailscale address is \'%s\'\n" $USE_TAILSCALE
-printf "IP lookup address is \'%s\'\n" $IP_LOOKUP_ADD
-printf "Domain to check is \'%s\'\n" $DOMAIN
-printf "Hostname to update is \'%s\'\n" $HOST
-printf "Current adresses are IP4 %s and IP6 %s\n" $IP4_ADD_CURRENT $IP6_ADD_CURRENT
-printf "DNS reports adresses are IP4 %s and IP6 %s\n" $IP4_ADD_DNS $IP6_ADD_DNS
+printf "DNS Lookup Server is     : %s\n" $DNS_LOOKUP_SERVER
+printf "DNS API Token is         : %s\n" $DNS_API_TOKEN
+printf "DNS API protocol is      : %s\n" $DNS_API_PROTOCOL
+printf "DNS API server is        : %s\n" $DNS_API_SERVER
+printf "DNS API Port is          : %s\n" $DNS_API_PORT
+printf "Use Tailscale address is : %s\n" $USE_TAILSCALE
+printf "IP lookup address is     : %s\n" $IP_LOOKUP_ADD
+printf "Domain to check is       : %s\n" $DOMAIN
+printf "Hostname to update is    : %s\n" $HOST
+printf "Current adresses are     : IP4 %s and IP6 %s\n" $IP4_ADD_CURRENT $IP6_ADD_CURRENT
+printf "DNS reports adresses are : IP4 %s and IP6 %s\n" $IP4_ADD_DNS $IP6_ADD_DNS
 
 [ $DRYRUN == true ] && echo "Exiting due to dryrun." && exit 0
 [ ${DNS_API_TOKEN:-unset} = unset ] && echo "DNS_API_TOKEN unset!" && exit 1
