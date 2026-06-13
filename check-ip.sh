@@ -4,7 +4,6 @@ set -euf
 set -o pipefail
 
 declare DRYRUN
-
 declare IP_LOOKUP_ADD
 declare DNS_LOOKUP_SERVER
 declare DNS_API_PROTOCOL
@@ -22,14 +21,14 @@ declare IP6_ADD_DNS
 
 [ -f .env ] && source .env
 
-DRYRUN=${DRYRUN:-false}
+DRYRUN=${DRYRUN:-true}
 IP_LOOKUP_ADD=${IP_LOOKUP_ADD:-icanhazip.com}
 DNS_LOOKUP_SERVER=${DNS_LOOKUP_SERVER:-localhost}
-DNS_API_PROTOCOL=${DNS_API_PROTOCOL:-http}
+DNS_API_PROTOCOL=${DNS_API_PROTOCOL:-https}
 DNS_API_SERVER=${DNS_API_SERVER:-localhost}
-DNS_API_PORT=${DNS_API_PORT:-80}
-DOMAIN=${DOMAIN:-$(hostname -d)}
-HOST=${HOST:-$(hostname -s)}
+DNS_API_PORT=${DNS_API_PORT:-443}
+DOMAIN=${DOMAIN:-$(hostname --domain)}
+HOST=${HOST:-$(hostname --short)}
 USE_TAILSCALE=${USE_TAILSCALE:-false}
 DNS_API_TOKEN=${DNS_API_TOKEN:-unset}
 
@@ -41,11 +40,14 @@ else
     IP6_ADD_CURRENT=$(curl -6 ${IP_LOOKUP_ADD} 2>/dev/null)
 fi
 
-#set -x    
-IP4_ADD_DNS=$(dig @${DNS_LOOKUP_SERVER} +short ${HOST}.${DOMAIN} A 2>/dev/null || true)
-IP6_ADD_DNS=$(dig @${DNS_LOOKUP_SERVER} +short ${HOST}.${DOMAIN} AAAA 2>/dev/null || true)
-#set +x
-IP4_ADD_DNS=${IP4_ADD_DNS:-unset}   
+responce=$(curl ${DNS_API_PROTOCOL}://${DNS_API_SERVER}:${DNS_API_PORT}/api/zones/records/get?TOKEN=${DNS_API_TOKEN}\&domain=${HOST}.${DOMAIN}\&zone=${DOMAIN}\&type=A \&listzone=true 2>/dev/null || true)
+
+#printf "IP lookup resonce is :-\n%s\n" "$(echo $responce | jq)"
+
+IP4_ADD_DNS=$(echo $responce | jq -r '.response.records.[] | select(.type=="A") | .rData.ipAddress')
+IP6_ADD_DNS=$(echo $responce | jq -r '.response.records.[] | select(.type=="AAAA") | .rData.ipAddress')
+
+IP4_ADD_DNS=${IP4_ADD_DNS:-unset}
 IP6_ADD_DNS=${IP6_ADD_DNS:-unset}
 
 printf "DNS Lookup Server is     : %s\n" $DNS_LOOKUP_SERVER
@@ -87,7 +89,7 @@ if [ $IP4_ADD_CURRENT != $IP4_ADD_DNS ]; then
         fi
     fi
 else
-    printf "%s Not updated.\n" $IP4_ADD_CURRENT 
+    printf "%s No need to updated.\n" $IP4_ADD_CURRENT 
 fi
 
 if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
@@ -115,7 +117,7 @@ if [ $IP6_ADD_CURRENT != $IP6_ADD_DNS ]; then
         fi
     fi
 else
-    printf "%s Not updated.\n" $IP6_ADD_CURRENT 
+    printf "%s No need to update.\n" $IP6_ADD_CURRENT 
 fi
 
 exit 0
